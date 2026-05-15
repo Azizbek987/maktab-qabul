@@ -81,6 +81,7 @@ router.post('/login', async (req, res) => {
 router.post('/verify', async (req, res) => {
   try {
     const { phone, otp } = req.body
+    console.log(phone)
 
     // 1. Foydalanuvchini bazadan qidirish
     const userResult = await pool.query('SELECT * FROM users WHERE phone = $1', [phone])

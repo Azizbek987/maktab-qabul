@@ -1,25 +1,25 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom'; // 1. useNavigate-ni import qilamiz
+import { useNavigate } from 'react-router-dom';
 
 function RegisterPage() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate(); // 2. navigate funksiyasini e'lon qilamiz
+  const navigate = useNavigate();
 
   const handleRegister = async () => {
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', {
+      // 🚀 BACKEND MANZILI RENDERGA O'ZGARTIRILDI
+      const res = await axios.post('https://maktab-qabul-1.onrender.com/api/auth/register', {
         name,
         phone,
         password
       });
 
-      // 📍 4-QADAM — SHU YERNI O'ZGARTIRAMIZ
-      alert('OTP yuborildi (Terminalni tekshiring!)');
+      alert('OTP yuborildi!');
       
-      // Sahifani yangilamasdan /verify sahifasiga o'tkazish
+      // Muvaffaqiyatli bo'lsa, tasdiqlash sahifasiga o'tamiz
       navigate('/verify'); 
 
     } catch (err) {
@@ -34,7 +34,7 @@ function RegisterPage() {
         <input placeholder="Ism" onChange={(e) => setName(e.target.value)} style={{padding: '10px'}} />
         <input placeholder="Telefon" onChange={(e) => setPhone(e.target.value)} style={{padding: '10px'}} />
         <input type="password" placeholder="Parol" onChange={(e) => setPassword(e.target.value)} style={{padding: '10px'}} />
-        <button onClick={handleRegister} style={{ padding: '10px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px' }}>
+        <button onClick={handleRegister} style={{ padding: '10px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
           Ro'yxatdan o'tish
         </button>
       </div>
