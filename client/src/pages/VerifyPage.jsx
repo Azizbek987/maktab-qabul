@@ -9,9 +9,9 @@ function VerifyPage() {
 
   const verify = async () => {
     try {
-      // 🚀 BACKEND MANZILI RENDERGA O'ZGARTIRILDI
+      // 🚀 LINK ENV O'ZGARUVCHISIGA O'ZGARTIRILDI
       const res = await axios.post(
-        'https://maktab-qabul-1.onrender.com/api/auth/verify',
+        `${import.meta.env.VITE_API_URL}/api/auth/verify`,
         { phone, otp }
       );
 
