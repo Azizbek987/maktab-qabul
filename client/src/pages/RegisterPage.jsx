@@ -10,8 +10,8 @@ function RegisterPage() {
 
   const handleRegister = async () => {
     try {
-      // 🚀 BACKEND MANZILI RENDERGA O'ZGARTIRILDI
-      const res = await axios.post('https://maktab-qabul-1.onrender.com/api/auth/register', {
+      // 🚀 ENDI LINK QO'LDA YOZILMAYDI, VERCEL-DAN AVTOMATIK OLINADI
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/api/auth/register`, {
         name,
         phone,
         password

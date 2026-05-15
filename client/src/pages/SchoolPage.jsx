@@ -12,7 +12,7 @@ function SchoolPage() {
 
   const getSchools = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/schools/all')
+      const res = await axios.get('import.meta.env.VITE_API_URL/api/schools/all')
       setSchools(res.data)
     } catch (err) {
       console.log("Xatolik:", err)
@@ -22,7 +22,7 @@ function SchoolPage() {
   const createSchool = async () => {
     if (!name || !address) return alert("Hamma maydonlarni to'ldiring")
     try {
-      await axios.post('http://localhost:5000/api/schools/create', { name, address })
+      await axios.post('import.meta.env.VITE_API_URL/api/schools/create', { name, address })
       getSchools()
       setName('')
       setAddress('')

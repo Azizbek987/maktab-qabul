@@ -9,7 +9,7 @@ function LoginPage() {
   const handleLogin = async () => {
     try {
       const res = await axios.post(
-        'http://localhost:5000/api/auth/login',
+        'import.meta.env.VITE_API_URL/api/auth/login',
         {
           phone,
           password

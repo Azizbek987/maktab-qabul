@@ -16,7 +16,7 @@ function AdminPage() {
   // 1. ARIZALARNI OLISH
   const getData = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/application/all')
+      const res = await axios.get('import.meta.env.VITE_API_URL/api/application/all')
       setApps(res.data)
     } catch (err) {
       console.log(err)
@@ -26,7 +26,7 @@ function AdminPage() {
   // 2. STATISTIKA
   const getStats = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/application/stats')
+      const res = await axios.get('import.meta.env.VITE_API_URL/api/application/stats')
       setStats(res.data)
     } catch (err) {
       console.log(err)
@@ -36,7 +36,7 @@ function AdminPage() {
   // 3. STATUSNI YANGILASH
   const updateStatus = async (id, status) => {
     try {
-      await axios.put(`http://localhost:5000/api/application/status/${id}`, { status })
+      await axios.put(`import.meta.env.VITE_API_URL/api/application/status/${id}`, { status })
       getData()
       getStats()
     } catch (err) {
@@ -137,7 +137,7 @@ function AdminPage() {
                 
                 <p><strong>📄 Hujjat:</strong> 
                    <a 
-                     href={`http://localhost:5000/uploads/${item.document}`} 
+                     href={`import.meta.env.VITE_API_URL/uploads/${item.document}`} 
                      target="_blank" 
                      rel="noreferrer" 
                      className="text-blue-500 ml-2 hover:underline font-medium"

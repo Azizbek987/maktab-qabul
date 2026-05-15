@@ -20,7 +20,7 @@ function CabinetPage() {
     const userId = payload.id
 
     const res = await axios.get(
-      `http://localhost:5000/api/application/my/${userId}`
+      `import.meta.env.VITE_API_URL/api/application/my/${userId}`
     )
 
     setApps(res.data)
@@ -55,7 +55,7 @@ function CabinetPage() {
             </p>
 
             <a
-              href={`http://localhost:5000/uploads/${item.document}`}
+              href={`import.meta.env.VITE_API_URL/uploads/${item.document}`}
               target="_blank"
               rel="noreferrer"
               className="text-blue-500"

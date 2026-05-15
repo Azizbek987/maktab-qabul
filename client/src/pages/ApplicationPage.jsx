@@ -20,7 +20,7 @@ function ApplicationPage() {
 
   const getSchools = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/schools/all')
+      const res = await axios.get('import.meta.env.VITE_API_URL/api/schools/all')
       setSchools(res.data)
     } catch (err) {
       console.log("Maktablarni yuklashda xatolik:", err)
@@ -63,7 +63,7 @@ function ApplicationPage() {
       formData.append('user_id', user_id) 
 
       await axios.post(
-        'http://localhost:5000/api/application/create',
+        'import.meta.env.VITE_API_URL/api/application/create',
         formData
       )
 
