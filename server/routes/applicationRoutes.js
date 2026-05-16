@@ -2,55 +2,27 @@ const express = require('express')
 const pool = require('../config/db')
 const upload = require('../middleware/upload')
 const sendEmail = require('../utils/email') 
-
-// 📍 1-QADAM: HIMOYACHINI IMPORT QILISH
 const authMiddleware = require('../middleware/authMiddleware')
+const roleMiddleware = require('../middleware/roleMiddleware') // 👈 Yangi qo'shildi
 
 const router = express.Router()
 
-// 1. CREATE APPLICATION (ARIZA YARATISH)
-router.post(
-  '/create',
-  upload.single('document'),
-  async (req, res) => {
+// 1. ARIZA YARATISH (Buni hamma login qilgan 'parent'lar qila oladi)
+router.post('/create', authMiddleware, upload.single('document'), async (req, res) => {
     try {
-      const {
-        parent_name,
-        child_name,
-        age,
-        school_id, 
-        phone,
-        user_id 
-      } = req.body
-
+      const { parent_name, child_name, age, school_id, phone, user_id } = req.body
       const document = req.file ? req.file.filename : null
 
       const result = await pool.query(
-        `INSERT INTO applications
-        (parent_name, child_name, age, school_id, phone, document, user_id)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *`,
+        `INSERT INTO applications (parent_name, child_name, age, school_id, phone, document, user_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
         [parent_name, child_name, age, school_id, phone, document, user_id]
       )
 
-      try {
-        await sendEmail(
-          'admin@gmail.com', 
-          'Yangi ariza keldi', 
-          `${child_name} uchun yangi ariza yuborildi. Telefon: ${phone}`
-        )
-      } catch (mailError) {
-        console.error("Email yuborishda muammo:", mailError.message)
-      }
-
-      // 🔔 REALTIME NOTIFICATION (SOCKET.IO) START
       const io = req.app.get('io')
       if (io) {
-        io.emit('new_application', {
-          message: `🔥 Yangi ariza keldi! ${child_name} uchun ariza topshirildi.`
-        })
+        io.emit('new_application', { message: `🔥 Yangi ariza keldi! ${child_name} uchun.` })
       }
-      // 🔔 REALTIME NOTIFICATION END
 
       res.json(result.rows[0])
     } catch (error) {
@@ -59,33 +31,41 @@ router.post(
   }
 )
 
-// 2. GET ALL APPLICATIONS (ADMIN UCHUN) - 📍 HIMOYALANDI
-router.get('/all', authMiddleware, async (req, res) => {
+// 2. HAMMA ARIZALARNI OLISH (Faqat super_admin va school_admin ko'ra oladi)
+// 🔐 HIMOYA KUCHAYTIRILDI!
+router.get('/all', authMiddleware, roleMiddleware('super_admin', 'school_admin'), async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT 
-        applications.*, 
-        schools.name AS school_name
-      FROM applications
-      LEFT JOIN schools ON applications.school_id = schools.id
-      ORDER BY applications.id DESC
-    `)
+    let result;
+    
+    // 🏫 SCHOOL ADMIN REJASI (NEXT LEVEL):
+    // Agar kirgan foydalanuvchi maktab admini bo'lsa, faqat uning maktabiga tegishli arizalar chiqadi
+    if (req.user.role === 'school_admin') {
+      result = await pool.query(`
+        SELECT applications.*, schools.name AS school_name FROM applications
+        LEFT JOIN schools ON applications.school_id = schools.id
+        WHERE applications.school_id = $1 ORDER BY applications.id DESC
+      `, [req.user.school_id]) // school_id foydalanuvchi jadvalidan olinadi
+    } else {
+      // super_admin bo'lsa hamma maktablarni ko'radi
+      result = await pool.query(`
+        SELECT applications.*, schools.name AS school_name FROM applications
+        LEFT JOIN schools ON applications.school_id = schools.id ORDER BY applications.id DESC
+      `)
+    }
+    
     res.json(result.rows)
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
 })
 
-// 3. USER APPLICATION API (FOYDALANUVCHINING O'Z ARIZALARI)
+// 3. FOYDALANUVCHINING O'Z ARIZALARI
 router.get('/my/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params
     const result = await pool.query(
-      `SELECT applications.*, schools.name AS school_name
-       FROM applications
-       LEFT JOIN schools ON applications.school_id = schools.id
-       WHERE user_id=$1
-       ORDER BY applications.id DESC`,
+      `SELECT applications.*, schools.name AS school_name FROM applications
+       LEFT JOIN schools ON applications.school_id = schools.id WHERE user_id=$1 ORDER BY applications.id DESC`,
       [id]
     )
     res.json(result.rows)
@@ -94,13 +74,24 @@ router.get('/my/:id', authMiddleware, async (req, res) => {
   }
 })
 
-// 4. GET STATS (STATISTIKA) - 📍 HIMOYALANDI
-router.get('/stats', authMiddleware, async (req, res) => {
+// 4. STATISTIKA (Faqat super_admin va school_admin uchun)
+router.get('/stats', authMiddleware, roleMiddleware('super_admin', 'school_admin'), async (req, res) => {
   try {
-    const total = await pool.query('SELECT COUNT(*) FROM applications')
-    const pending = await pool.query("SELECT COUNT(*) FROM applications WHERE status='pending'")
-    const approved = await pool.query("SELECT COUNT(*) FROM applications WHERE status='approved'")
-    const rejected = await pool.query("SELECT COUNT(*) FROM applications WHERE status='rejected'")
+    let total, pending, approved, rejected;
+
+    if (req.user.role === 'school_admin') {
+      // Maktab admini uchun faqat o'z maktabi statistikasi
+      total = await pool.query('SELECT COUNT(*) FROM applications WHERE school_id=$1', [req.user.school_id])
+      pending = await pool.query("SELECT COUNT(*) FROM applications WHERE status='pending' AND school_id=$1", [req.user.school_id])
+      approved = await pool.query("SELECT COUNT(*) FROM applications WHERE status='approved' AND school_id=$1", [req.user.school_id])
+      rejected = await pool.query("SELECT COUNT(*) FROM applications WHERE status='rejected' AND school_id=$1", [req.user.school_id])
+    } else {
+      // Super admin uchun umumiy statistika
+      total = await pool.query('SELECT COUNT(*) FROM applications')
+      pending = await pool.query("SELECT COUNT(*) FROM applications WHERE status='pending'")
+      approved = await pool.query("SELECT COUNT(*) FROM applications WHERE status='approved'")
+      rejected = await pool.query("SELECT COUNT(*) FROM applications WHERE status='rejected'")
+    }
 
     res.json({
       total: total.rows[0].count,
@@ -113,8 +104,8 @@ router.get('/stats', authMiddleware, async (req, res) => {
   }
 })
 
-// 5. UPDATE STATUS (STATUSNI YANGILASH) - 📍 HIMOYALANDI
-router.put('/status/:id', authMiddleware, async (req, res) => {
+// 5. STATUSNI YANGILASH (Faqat super_admin va school_admin)
+router.put('/status/:id', authMiddleware, roleMiddleware('super_admin', 'school_admin'), async (req, res) => {
   try {
     const { status } = req.body
     const { id } = req.params
@@ -124,16 +115,10 @@ router.put('/status/:id', authMiddleware, async (req, res) => {
       [status, id]
     )
 
-    // 🔔 REALTIME NOTIFICATION (STATUS YANGILANGANDA ADMIN VA FOYDALANUVCHI UCHUN)
     const io = req.app.get('io')
     if (io) {
-      io.emit('status_updated', {
-        message: `📋 Ariza statusi yangilandi! Yangi status: ${status}`,
-        application_id: id,
-        status: status
-      })
+      io.emit('status_updated', { message: `📋 Ariza statusi yangilandi: ${status}`, application_id: id, status })
     }
-    // 🔔 REALTIME NOTIFICATION END
 
     res.json(result.rows[0])
   } catch (error) {
