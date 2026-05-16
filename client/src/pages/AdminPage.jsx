@@ -1,37 +1,32 @@
 import { useEffect, useState } from 'react'
+import axios from 'react- Counselling'
 import axios from 'axios'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { io } from 'socket.io-client'
-import toast from 'react-hot-toast' // 👈 TOAST IMPORT QILINDI
+import toast from 'react-hot-toast' 
 
 function AdminPage() {
   const [apps, setApps] = useState([])
   const [stats, setStats] = useState({})
   const [search, setSearch] = useState('')
 
-  // 📍 SO'RAGAN JOYINGIZ MANA SHU YERGA TUSHDI:
   useEffect(() => {
     getData()
     getStats()
 
-    // 🛑 1. Brauzerdan bildirishnoma ko'rsatish uchun ruxsat so'rash
     if (Notification.permission === 'default') {
       Notification.requestPermission()
     }
 
-    // 🔌 Socket.IO ulanish
     const socket = io('https://maktab-qabul.onrender.com')
 
-    // 🔥 2. Realtime yangi ariza kelganda ishlaydigan kod
     socket.on('new_application', (data) => {
-      getData()  // Ro'yxatni yangilash
-      getStats() // Statistikani yangilash
+      getData()  
+      getStats() 
 
-      // 🟢 Sayt ichida chiroyli Premium Toast UI chiqarish
       toast.success('🔥 Yangi ariza keldi!')
 
-      // 🖥 Brauzer boshqa tabda bo'lsa ham kompyuter ekraniga Push yuborish
       if (Notification.permission === 'granted') {
         new Notification('Yangi ariza tushdi! 📝', {
           body: data.message,
@@ -45,38 +40,56 @@ function AdminPage() {
     }
   }, [])
 
-  // 1. ARIZALARNI OLISH
+  // 1. ARIZALARNI OLISH (Token Qo'shildi)
   const getData = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/application/all`)
+      const token = localStorage.getItem('token')
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/application/all`, {
+        headers: {
+          Authorization: `Bearer ${token}` // 👈 Bearer ulandi!
+        }
+      })
       setApps(res.data)
     } catch (err) {
-      console.log(err)
+      console.error("Ma'lumot olishda xatolik:", err)
     }
   }
 
-  // 2. STATISTIKA
+  // 2. STATISTIKA OLISH (Token Qo'shildi)
   const getStats = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/application/stats`)
+      const token = localStorage.getItem('token')
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/application/stats`, {
+        headers: {
+          Authorization: `Bearer ${token}` // 👈 Bearer ulandi!
+        }
+      })
       setStats(res.data)
     } catch (err) {
-      console.log(err)
+      console.error("Statistika olishda xatolik:", err)
     }
   }
 
-  // 3. STATUSNI YANGILASH
+  // 3. STATUSNI YANGILASH (Token Qo'shildi)
   const updateStatus = async (id, status) => {
     try {
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/application/status/${id}`, { status })
+      const token = localStorage.getItem('token')
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/application/status/${id}`, 
+        { status },
+        {
+          headers: {
+            Authorization: `Bearer ${token}` // 👈 Bearer ulandi!
+          }
+        }
+      )
       getData()
       getStats()
+      toast.success(`Status muvaffaqiyatli o'zgartirildi: ${status}`)
     } catch (err) {
-      alert('Xatolik yuz berdi')
+      toast.error('Statusni o\'zgartirishda xatolik yuz berdi')
     }
   }
 
-  // 4. PDF YUKLASH FUNKSIYASI
   const downloadPDF = () => {
     const doc = new jsPDF()
     doc.text('Maktab Qabul Arizalari', 14, 15)
@@ -106,7 +119,6 @@ function AdminPage() {
         Admin Panel
       </h1>
 
-      {/* STATISTIKA BLOCKI */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-10">
         <div className="bg-white p-5 rounded shadow border-l-4 border-blue-500">
           📊 Total: <span className="font-bold">{stats.total || 0}</span>
@@ -122,7 +134,6 @@ function AdminPage() {
         </div>
       </div>
 
-      {/* PDF BUTTON */}
       <button
         onClick={downloadPDF}
         className="w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-white px-5 py-3 rounded mb-5 shadow-lg transition-all flex items-center justify-center gap-2"
@@ -130,7 +141,6 @@ function AdminPage() {
         📄 PDF Yuklash
       </button>
 
-      {/* QIDIRUV INPUTI */}
       <input
         type="text"
         placeholder="Ism yoki telefon orqali qidirish..."
@@ -139,7 +149,6 @@ function AdminPage() {
         className="border-2 p-3 rounded-lg w-full mb-8 shadow-sm focus:ring-2 focus:ring-blue-400 outline-none transition-all"
       />
 
-      {/* APPLICATIONS LIST */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {apps
           .filter((item) => {
@@ -195,13 +204,6 @@ function AdminPage() {
             </div>
           ))}
       </div>
-
-      {/* QIDIRUVDA TOPILMASA */}
-      {apps.length > 0 && apps.filter(i => `${i.child_name} ${i.phone}`.toLowerCase().includes(search.toLowerCase())).length === 0 && (
-        <div className="text-center py-10 text-gray-500 italic">
-          Hech qanday ariza topilmadi...
-        </div>
-      )}
     </div>
   )
 }

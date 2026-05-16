@@ -1,21 +1,31 @@
-const jwt = require('jsonwebtoken');
+const jwt = require('jsonwebtoken')
 
 const authMiddleware = (req, res, next) => {
-  // So'rovning bosh qismidan (header) tokenni olamiz
-  const token = req.headers.authorization;
+  // Standart bo'yicha headerni tekshirish
+  const authHeader = req.headers.authorization
 
-  if (!token) {
-    return res.status(401).json({ message: 'Ruxsat yo‘q, token topilmadi' });
+  if (!authHeader) {
+    return res.status(401).json({
+      message: 'Token topilmadi. Tizimga qayta kiring!'
+    })
   }
 
   try {
-    // Tokenni maxfiy kalit bilan tekshiramiz
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // Foydalanuvchi ma'lumotini saqlab qo'yamiz
-    next(); // Hammasi yaxshi bo'lsa, keyingi bosqichga o'tkazamiz
-  } catch (err) {
-    res.status(401).json({ message: 'Token xato yoki muddati o‘tgan' });
-  }
-};
+    // "Bearer TOKEN_STR" ko'rinishidan faqat TOKEN_STR qismini ajratib olish
+    const token = authHeader.split(' ')[1]
+    
+    if (!token) {
+      return res.status(401).json({ message: 'Token formati noto‘g‘ri' })
+    }
 
-module.exports = authMiddleware;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    req.user = decoded // Foydalanuvchi ma'lumotlarini req.user ga biriktirish
+    next()
+  } catch (error) {
+    return res.status(401).json({
+      message: 'Yaroqsiz token yoki token muddati tugagan!'
+    })
+  }
+}
+
+module.exports = authMiddleware
