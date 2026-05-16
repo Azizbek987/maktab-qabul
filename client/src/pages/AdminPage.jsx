@@ -3,28 +3,43 @@ import axios from 'axios'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { io } from 'socket.io-client'
+import toast from 'react-hot-toast' // 👈 TOAST IMPORT QILINDI
 
 function AdminPage() {
   const [apps, setApps] = useState([])
   const [stats, setStats] = useState({})
   const [search, setSearch] = useState('')
 
+  // 📍 SO'RAGAN JOYINGIZ MANA SHU YERGA TUSHDI:
   useEffect(() => {
     getData()
     getStats()
 
-    // 🔌 REALTIME: SOCKET.IO BACKEND SERVERGA ULANISH
-    // Render manzilingizni to'g'ridan-to'g'ri yozamiz:
+    // 🛑 1. Brauzerdan bildirishnoma ko'rsatish uchun ruxsat so'rash
+    if (Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+
+    // 🔌 Socket.IO ulanish
     const socket = io('https://maktab-qabul.onrender.com')
 
-    // Yangi ariza kelganda ishlaydigan voqeani tinglash
+    // 🔥 2. Realtime yangi ariza kelganda ishlaydigan kod
     socket.on('new_application', (data) => {
-      alert(data.message) // Ekran tepasida ogohlantirish oynasi chiqadi
-      getData()           // Arizalar ro'yxatini LIVE yangilaydi
-      getStats()          // Statistikani ham LIVE yangilaydi
+      getData()  // Ro'yxatni yangilash
+      getStats() // Statistikani yangilash
+
+      // 🟢 Sayt ichida chiroyli Premium Toast UI chiqarish
+      toast.success('🔥 Yangi ariza keldi!')
+
+      // 🖥 Brauzer boshqa tabda bo'lsa ham kompyuter ekraniga Push yuborish
+      if (Notification.permission === 'granted') {
+        new Notification('Yangi ariza tushdi! 📝', {
+          body: data.message,
+          icon: '/favicon.ico'
+        })
+      }
     })
 
-    // Komponent o'chganda (sahifadan chiqilganda) socketni uzish
     return () => {
       socket.disconnect()
     }
@@ -33,7 +48,6 @@ function AdminPage() {
   // 1. ARIZALARNI OLISH
   const getData = async () => {
     try {
-      // 🛠 API manzili to'g'rilandi (Template Literals qo'llanildi)
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/application/all`)
       setApps(res.data)
     } catch (err) {
@@ -44,7 +58,6 @@ function AdminPage() {
   // 2. STATISTIKA
   const getStats = async () => {
     try {
-      // 🛠 API manzili to'g'rilandi
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/application/stats`)
       setStats(res.data)
     } catch (err) {
@@ -55,7 +68,6 @@ function AdminPage() {
   // 3. STATUSNI YANGILASH
   const updateStatus = async (id, status) => {
     try {
-      // 🛠 API manzili to'g'rilandi
       await axios.put(`${import.meta.env.VITE_API_URL}/api/application/status/${id}`, { status })
       getData()
       getStats()
