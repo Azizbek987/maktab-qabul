@@ -1,5 +1,6 @@
 const express = require('express')
 const pool = require('../config/db')
+const axios = require('axios') // 🤖 Telegram botga so'rov yuborish uchun axios ulandi
 const router = express.Router()
 
 // 📍 1. REGISTER — RO'YXATDAN O'TISH VA OTP YUBORISH
@@ -33,7 +34,22 @@ router.post('/register', async (req, res) => {
     console.log(`🔢 OTP CODE: ${otp}`)
     console.log('---------------------------')
 
-    res.json({ message: "OTP kod yuborildi (Terminalni tekshiring!)" })
+    // 🤖 TELEGRAM BOT ORQALI KODNI YUBORISH
+    const BOT_TOKEN = '8934374442:AAFehbEADEO80dnVl0fAybc0F4lxTIjOess'
+    const YOUR_TELEGRAM_ID = '2122054681' // Hozircha kod faqat sizga boradi
+    
+    const telegramText = `🔔 *YANGI SO'ROV*\n\n👤 Ism: ${name}\n📞 Tel: ${phone}\n🔢 *OTP KOD: ${otp}*`
+
+    // Telegram API ga so'rov yuborish (Sinxronlik buzilmasligi uchun await ishlatilmadi, orqada ishlayveradi)
+    axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      chat_id: YOUR_TELEGRAM_ID,
+      text: telegramText,
+      parse_mode: 'Markdown'
+    })
+    .then(() => console.log("🤖 OTP kod Telegram botga muvaffaqiyatli yuborildi!"))
+    .catch((err) => console.error("❌ Telegram botga yuborishda xatolik:", err.message))
+
+    res.json({ message: "OTP kod yuborildi (Telegram botingizni tekshiring!)" })
 
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -54,7 +70,7 @@ router.post('/login', async (req, res) => {
       return res.status(404).json({ message: 'Foydalanuvchi topilmadi' })
     }
 
-    // 2. SIZ SO'RAGAN TEKSHIRUV: Akkaunt tasdiqlanganmi?
+    // 2. Akkaunt tasdiqlanganmi?
     if (!user.is_verified) {
       return res.status(401).json({
         message: 'Account verify qilinmagan. Iltimos, raqamingizni tasdiqlang!'
@@ -81,7 +97,6 @@ router.post('/login', async (req, res) => {
 router.post('/verify', async (req, res) => {
   try {
     const { phone, otp } = req.body
-    console.log(phone)
 
     // 1. Foydalanuvchini bazadan qidirish
     const userResult = await pool.query('SELECT * FROM users WHERE phone = $1', [phone])

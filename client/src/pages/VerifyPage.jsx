@@ -8,17 +8,24 @@ function VerifyPage() {
   const navigate = useNavigate();
 
   const verify = async () => {
+    // 🔍 Kiritilgan ma'lumotlarni tekshirish uchun konsolga chiqaramiz
+    console.log("Verify uchun ketayotgan ma'lumotlar:", { phone, otp });
+
     try {
-      // 🚀 LINK ENV O'ZGARUVCHISIGA O'ZGARTIRILDI
       const res = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/auth/verify`,
         { phone, otp }
       );
 
-      alert(res.data.message);
+      console.log("Serverdan kelgan muvaffaqiyatli javob:", res.data);
+      alert(res.data.message || "Kod muvaffaqiyatli tasdiqlandi!");
       navigate('/login'); 
     } catch (err) {
-      alert(err.response?.data?.message || "Xatolik yuz berdi");
+      // 📍 SHPION: Server qaytargan asl xatoni konsol va alertda ko'rish
+      console.error("Tasdiqlashda xatolik:", err.response?.data);
+      
+      const serverXatosi = err.response?.data?.message || err.response?.data?.error;
+      alert(serverXatosi || "Xatolik yuz berdi. Raqam yoki OTP noto'g'ri!");
     }
   };
 
@@ -48,9 +55,12 @@ function VerifyPage() {
         <h1 style={{ marginBottom: '20px', color: '#1f2937' }}>OTP Tasdiqlash</h1>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <label style={{ fontSize: '14px', textAlign: 'left', color: '#6b7280', marginBottom: '-10px' }}>
+            Ro'yxatdan o'tgan raqamni aniq o'zini yozing (Masalan: 883461202)
+          </label>
           <input
             type="text"
-            placeholder="+998 90 123 45 67"
+            placeholder="883461202"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             style={{ 
