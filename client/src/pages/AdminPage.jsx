@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { io } from 'socket.io-client'
 
 function AdminPage() {
   const [apps, setApps] = useState([])
@@ -11,12 +12,29 @@ function AdminPage() {
   useEffect(() => {
     getData()
     getStats()
+
+    // 🔌 REALTIME: SOCKET.IO BACKEND SERVERGA ULANISH
+    // Render manzilingizni to'g'ridan-to'g'ri yozamiz:
+    const socket = io('https://maktab-qabul.onrender.com')
+
+    // Yangi ariza kelganda ishlaydigan voqeani tinglash
+    socket.on('new_application', (data) => {
+      alert(data.message) // Ekran tepasida ogohlantirish oynasi chiqadi
+      getData()           // Arizalar ro'yxatini LIVE yangilaydi
+      getStats()          // Statistikani ham LIVE yangilaydi
+    })
+
+    // Komponent o'chganda (sahifadan chiqilganda) socketni uzish
+    return () => {
+      socket.disconnect()
+    }
   }, [])
 
   // 1. ARIZALARNI OLISH
   const getData = async () => {
     try {
-      const res = await axios.get('import.meta.env.VITE_API_URL/api/application/all')
+      // 🛠 API manzili to'g'rilandi (Template Literals qo'llanildi)
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/application/all`)
       setApps(res.data)
     } catch (err) {
       console.log(err)
@@ -26,7 +44,8 @@ function AdminPage() {
   // 2. STATISTIKA
   const getStats = async () => {
     try {
-      const res = await axios.get('import.meta.env.VITE_API_URL/api/application/stats')
+      // 🛠 API manzili to'g'rilandi
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/application/stats`)
       setStats(res.data)
     } catch (err) {
       console.log(err)
@@ -36,7 +55,8 @@ function AdminPage() {
   // 3. STATUSNI YANGILASH
   const updateStatus = async (id, status) => {
     try {
-      await axios.put(`import.meta.env.VITE_API_URL/api/application/status/${id}`, { status })
+      // 🛠 API manzili to'g'rilandi
+      await axios.put(`${import.meta.env.VITE_API_URL}/api/application/status/${id}`, { status })
       getData()
       getStats()
     } catch (err) {
@@ -131,13 +151,10 @@ function AdminPage() {
               <div className="text-gray-600 mb-6 space-y-1 text-sm">
                 <p><strong>👤 Ota-ona:</strong> {item.parent_name}</p>
                 <p><strong>📞 Telefon:</strong> {item.phone}</p>
-                
-                {/* 📍 7-QADAM — MAKTAB NOMI VA ID SHU YERDA */}
                 <p><strong>🏫 Maktab:</strong> {item.school_name || "Yuklanmoqda..."}</p>
-                
                 <p><strong>📄 Hujjat:</strong> 
                    <a 
-                     href={`import.meta.env.VITE_API_URL/uploads/${item.document}`} 
+                     href={`${import.meta.env.VITE_API_URL}/uploads/${item.document}`} 
                      target="_blank" 
                      rel="noreferrer" 
                      className="text-blue-500 ml-2 hover:underline font-medium"

@@ -43,6 +43,15 @@ router.post(
         console.error("Email yuborishda muammo:", mailError.message)
       }
 
+      // 🔔 REALTIME NOTIFICATION (SOCKET.IO) START
+      const io = req.app.get('io')
+      if (io) {
+        io.emit('new_application', {
+          message: `🔥 Yangi ariza keldi! ${child_name} uchun ariza topshirildi.`
+        })
+      }
+      // 🔔 REALTIME NOTIFICATION END
+
       res.json(result.rows[0])
     } catch (error) {
       res.status(500).json({ error: error.message })
@@ -114,6 +123,17 @@ router.put('/status/:id', authMiddleware, async (req, res) => {
       'UPDATE applications SET status=$1 WHERE id=$2 RETURNING *',
       [status, id]
     )
+
+    // 🔔 REALTIME NOTIFICATION (STATUS YANGILANGANDA ADMIN VA FOYDALANUVCHI UCHUN)
+    const io = req.app.get('io')
+    if (io) {
+      io.emit('status_updated', {
+        message: `📋 Ariza statusi yangilandi! Yangi status: ${status}`,
+        application_id: id,
+        status: status
+      })
+    }
+    // 🔔 REALTIME NOTIFICATION END
 
     res.json(result.rows[0])
   } catch (error) {

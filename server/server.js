@@ -1,3 +1,5 @@
+const http = require('http');
+const { Server } = require('socket.io');
 const express = require('express')
 const cors = require('cors')
 const path = require('path')
@@ -44,9 +46,28 @@ app.get('/db-test', async (req, res) => {
   }
 })
 
-// 7. Serverni ishga tushirish
-const PORT = process.env.PORT || 5000
-app.listen(PORT, () => {
-  console.log(`🚀 Server ${PORT}-portda ishga tushdi`)
-  console.log(`🔗 http://localhost:${PORT}`)
-})
+// 🛠 Server va Socket.IO sozlamalari
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: '*', // Hamma joydan ulanishga ruxsat beramiz
+    methods: ["GET", "POST"]
+  }
+});
+
+// io ni req orqali route-larda ishlatish uchun sozlash
+app.set('io', io);
+
+io.on('connection', (socket) => {
+  console.log('🟢 Realtime: yangi foydalanuvchi ulandi!');
+  
+  socket.on('disconnect', () => {
+    console.log('🔴 Realtime: foydalanuvchi uzildi.');
+  });
+});
+
+// DIQQAT: app.listen emas, server.listen bo'lishi shart!
+server.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
