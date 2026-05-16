@@ -12,8 +12,10 @@ const pool = require('./config/db')
 const authRoutes = require('./routes/authRoutes')
 const applicationRoutes = require('./routes/applicationRoutes')
 const schoolRoutes = require('./routes/schoolRoutes')
+const chatRoutes = require('./routes/chatRoutes') // 💬 Chat routeni import qilish
 
 const app = express()
+const PORT = process.env.PORT || 10000; // 🛠 PORT o'zgaruvchisi e'lon qilindi
 
 // 3. Middleware'lar
 app.use(cors())
@@ -24,6 +26,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 app.use('/api/auth', authRoutes)
 app.use('/api/application', applicationRoutes)
 app.use('/api/schools', schoolRoutes)
+app.use('/api/chat', chatRoutes) // 💬 Chat routeni tizimga ulash
 
 // 5. Asosiy test yo'li
 app.get('/', (req, res) => {

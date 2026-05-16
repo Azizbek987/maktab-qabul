@@ -9,6 +9,7 @@ import ApplicationPage from '../pages/ApplicationPage'
 import AdminPage from '../pages/AdminPage'
 // 📍 8-QADAM — CABINET PAGE IMPORTI
 import CabinetPage from '../pages/CabinetPage' 
+import ChatPage from '../pages/ChatPage' // 💬 Chat sahifasini import qilish
 import { getUser } from '../utils/auth'
 
 const AdminRoute = ({ children }) => {
@@ -37,6 +38,16 @@ function Router() {
           element={
             <ProtectedRoute>
               <CabinetPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 💬 REALTIME SUPPORT CHAT SAHIFASI (Faqat login qilganlar uchun) */}
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <ChatPage />
             </ProtectedRoute>
           }
         />
