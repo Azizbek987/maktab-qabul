@@ -1,6 +1,6 @@
 const express = require('express');
-const pool = require('../config/db');
-const sendTelegramMessage = require('../utils/telegram'); // 🔥 11-qadamda yaratgan markazlashgan botimizni ulaymiz
+const pool = require('../config/db'); // Sizning bazangiz yo'li
+const sendTelegramMessage = require('../utils/telegram'); // Markazlashgan bot
 const router = express.Router();
 
 // 📍 1. REGISTER — RO'YXATDAN O'TISH VA OTP YUBORISH
@@ -34,16 +34,28 @@ router.post('/register', async (req, res) => {
     console.log(`🔢 OTP CODE: ${otp}`);
     console.log('---------------------------');
 
-    // 🤖 TELEGRAM BOT ORQALI KODNI YUBORISH (11-qadamdagi tizim orqali)
+    // 🤖 TELEGRAM BOT ORQALI KODNI YUBORISH
     const telegramText = `🔔 *YANGI RO'YXATDAN O'TISH SO'ROVI*\n\n👤 *Ism:* ${name}\n📞 *Tel:* ${phone}\n🔢 *OTP KOD:* \`${otp}\``;
 
-    // Xabarni markaziy bot funksiyamiz orqali yuboramiz
-    sendTelegramMessage(telegramText);
+    // 🔥 Xavfsizlik qalqoni: Telegram bot o'chib qolsa ham frontendga 500 xato bermasligi uchun alohida try-catch qilamiz
+    try {
+      // Bu yerga majburiy AWAIT qo'shdik, xabarni to'liq ketishini ta'minlaydi
+      await sendTelegramMessage(telegramText);
+      console.log("🤖 Telegram botga xabar muvaffaqiyatli ketdi!");
+    } catch (telegramError) {
+      // Telegram qulasa, sababini logda ko'ramiz, lekin ro'yxatdan o'tish to'xtab qolmaydi
+      console.error("❌ Telegram util funksiyasida xato:", telegramError.message);
+    }
 
-    res.json({ success: true, message: "OTP kod yuborildi (Telegram botingizni tekshiring!)" });
+    // Muvaffaqiyatli javob (Zaxira tariqasida OTP kod baribir logda ko'rinadi)
+    return res.status(200).json({ 
+      success: true, 
+      message: "OTP kod yuborildi (Telegram botingizni tekshiring!)" 
+    });
 
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error("💥 Registerda umumiy xato:", error.message);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -74,14 +86,14 @@ router.post('/login', async (req, res) => {
     }
 
     // Hammasi to'g'ri bo'lsa
-    res.json({ 
+    return res.json({ 
       success: true,
       message: 'Tizimga muvaffaqiyatli kirdingiz!', 
       user: { name: user.name, phone: user.phone } 
     });
 
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -108,10 +120,10 @@ router.post('/verify', async (req, res) => {
       [phone]
     );
 
-    res.json({ success: true, message: 'Tabriklaymiz! Raqamingiz muvaffaqiyatli tasdiqlandi.' });
+    return res.json({ success: true, message: 'Tabriklaymiz! Raqamingiz muvaffaqiyatli tasdiqlandi.' });
 
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 
