@@ -1,85 +1,64 @@
-import { useEffect, useState } from 'react'
-import axios from 'axios'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid
-} from 'recharts'
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 function AnalyticsPage() {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState({ total: 0, approved: 0, pending: 0, rejected: 0 });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getAnalytics()
-  }, [])
-
-  const getAnalytics = async () => {
-    try {
-      const token = localStorage.getItem('token')
-
-      // API dan arizalarni token bilan birga xavfsiz tortib olish
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/api/application/all`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}` // Bearer formati to'g'rilandi
+    const fetchAnalytics = async () => {
+      try {
+        // 🚀 6-QADAM: API CACHE (force-cache orqali ma'lumotlar qayta-qayta yuklanmaydi, keshdan tez olinadi)
+        const res = await axios.get(
+          `https://maktab-qabul-1.onrender.com/api/application/all`,
+          {
+            headers: { 'Cache-Control': 'max-age=3600' }, // Standard cache header
+            cache: 'force-cache' // Brauzerga keshdan o'qishni buyuradi
           }
-        }
-      )
+        );
+        
+        const apps = res.data || [];
+        setStats({
+          total: apps.length,
+          approved: apps.filter(a => a.status === 'approved').length,
+          pending: apps.filter(a => a.status === 'pending').length,
+          rejected: apps.filter(a => a.status === 'rejected').length,
+        });
+      } catch (err) {
+        console.error("Analitikada xatolik:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      // Status bo'yicha arizalarni sanash
-      const approved = res.data.filter((i) => i.status === 'approved').length
-      const rejected = res.data.filter((i) => i.status === 'rejected').length
-      const pending = res.data.filter((i) => i.status === 'pending').length
+    fetchAnalytics();
+  }, []);
 
-      // Grafik uchun ma'lumotni tayyorlash
-      setData([
-        { name: 'Tasdiqlangan', value: approved, fill: '#10B981' }, // Yashil
-        { name: 'Rad etilgan', value: rejected, fill: '#EF4444' },   // Qizil
-        { name: 'Kutilmoqda', value: pending, fill: '#F59E0B' }     // Sariq
-      ])
-      setLoading(false)
-    } catch (err) {
-      console.error("Analitika yuklashda xatolik:", err)
-      setLoading(false)
-    }
-  }
-
-  if (loading) {
-    return <div className="text-center p-10 text-xl font-bold">Grafik yuklanmoqda...</div>
-  }
+  if (loading) return <div className="text-center p-10 font-bold text-blue-600">Statistika hisoblanmoqda...</div>;
 
   return (
-    <div className="p-5 md:p-10 max-w-5xl mx-auto">
-      <h1 className="text-3xl md:text-4xl font-bold mb-8 text-gray-800">
-        📊 Tahlillar paneli (Analytics)
-      </h1>
-
-      <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
-        <h3 className="text-lg font-semibold mb-5 text-gray-600">Arizalar holati jadvali</h3>
-        
-        <div className="w-full h-[400px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="name" tick={{ fill: '#6B7280' }} />
-              <YAxis allowDecimals={false} tick={{ fill: '#6B7280' }} />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#fff', borderRadius: '12px', border: 'none', shadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
-                cursor={{ fill: '#F3F4F6' }}
-              />
-              <Bar dataKey="value" radius={[8, 8, 0, 0]} barSize={60} />
-            </BarChart>
-          </ResponsiveContainer>
+    <div className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-2xl font-black mb-6 text-gray-800">📊 Tizim Analitikasi (Real-vaqt)</h1>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-blue-50 p-5 rounded-2xl border text-center">
+          <p className="text-sm font-semibold text-blue-600">Jami Arizalar</p>
+          <h2 className="text-3xl font-black text-blue-900 mt-1">{stats.total}</h2>
+        </div>
+        <div className="bg-green-50 p-5 rounded-2xl border text-center">
+          <p className="text-sm font-semibold text-green-600">Tasdiqlandi</p>
+          <h2 className="text-3xl font-black text-green-900 mt-1">{stats.approved}</h2>
+        </div>
+        <div className="bg-yellow-50 p-5 rounded-2xl border text-center">
+          <p className="text-sm font-semibold text-yellow-600">Kutilmoqda</p>
+          <h2 className="text-3xl font-black text-yellow-900 mt-1">{stats.pending}</h2>
+        </div>
+        <div className="bg-red-50 p-5 rounded-2xl border text-center">
+          <p className="text-sm font-semibold text-red-600">Rad etildi</p>
+          <h2 className="text-3xl font-black text-red-900 mt-1">{stats.rejected}</h2>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default AnalyticsPage
+export default AnalyticsPage;

@@ -1,84 +1,40 @@
-const http = require('http');
-const { Server } = require('socket.io');
-const express = require('express')
-const cors = require('cors')
-const path = require('path')
-const helmet = require('helmet') // 🛡 Xavfsiz headerlar uchun
-const rateLimit = require('express-rate-limit') // 🛑 DDoS dan himoya uchun
-require('dotenv').config()
+const express = require('express');
+const cors = require('cors');
+const morgan = require('morgan'); // Morgan yuklandi
+const logger = require('./utils/logger'); // Logger yuklandi
+const applicationRoutes = require('./routes/applicationRoutes');
 
-// 1. Ma'lumotlar bazasi ulanishi
-const pool = require('./config/db')
+const app = express();
 
-// 2. Routelarni import qilish
-const authRoutes = require('./routes/authRoutes')
-const applicationRoutes = require('./routes/applicationRoutes')
-const schoolRoutes = require('./routes/schoolRoutes')
-const chatRoutes = require('./routes/chatRoutes')
+// Middleware sozlamalari
+app.use(cors());
+app.use(express.json());
 
-const app = express()
-const PORT = process.env.PORT || 10000;
+// 🚀 REQUEST LOGGER: Har bir kelayotgan so'rovni terminalda ko'rsatadi (GET /api/... 200 OK)
+app.use(morgan('dev')); 
 
-// 🛑 3. Rate Limiter (15 daqiqada bitta IP dan ko'pi bilan 100 ta so'rovga ruxsat)
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 100,
-  message: { error: "Xavfsizlik tizimi: Judayam ko'p so'rov yubordingiz. Birozdan keyin qayta urinib ko'ring!" }
-})
+// Routerlarni ulash
+app.use('/api/application', applicationRoutes);
 
-// 🛡 4. Xavfsizlik Middleware'larini amalda qo'llash
-app.use(helmet()) // Xakerlik hujumlaridan headerlarni berkitadi
-app.use(limiter)  // DDoS hujumlarini srazi to'xtatadi
-app.use(cors({ origin: '*' })) // CORS himoyasi
-app.use(express.json({ limit: '10mb' })) // 💾 Katta fayllar orqali serverni qulatishdan himoya
-
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
-
-// 5. API Yo'nalishlari (Routes)
-app.use('/api/auth', authRoutes)
-app.use('/api/application', applicationRoutes)
-app.use('/api/schools', schoolRoutes)
-app.use('/api/chat', chatRoutes)
-
-// 6. Asosiy test yo'llari
+// Bosh sahifa testi
 app.get('/', (req, res) => {
-  res.send('Backend xavfsiz holatda muvaffaqiyatli ishladi! 🛡')
-})
-
-app.get('/db-test', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT NOW()')
-    res.json({
-      message: "Bazaga ulanish muvaffaqiyatli!",
-      time: result.rows[0]
-    })
-  } catch (error) {
-    res.status(500).json({
-      error: "Bazaga ulanishda xatolik!",
-      details: error.message,
-    })
-  }
-})
-
-// 🛠 Server va Socket.IO sozlamalari
-const server = http.createServer(app);
-
-const io = new Server(server, {
-  cors: {
-    origin: '*',
-    methods: ["GET", "POST"]
-  }
+  res.send('Maktab Qabul API Tizimi Ishlamoqda... 🚀');
 });
 
-app.set('io', io);
-
-io.on('connection', (socket) => {
-  console.log('🟢 Realtime: yangi foydalanuvchi ulandi!');
-  socket.on('disconnect', () => {
-    console.log('🔴 Realtime: foydalanuvchi uzildi.');
+// 🛠️ GLOBAL ERROR HANDLER: Server kutilmaganda crash bo'lishidan asraydi
+app.use((err, req, res, next) => {
+  console.error("Global xatolik aniqlandi:", err.stack);
+  
+  // Xatoni error.log fayliga yozamiz
+  logger.error(`Global Server Xatosi: ${err.message} - Stack: ${err.stack}`);
+  
+  res.status(500).json({
+    message: 'Tizimda ichki server xatosi yuz berdi!'
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+// Serverni ishga tushirish
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server daxshat bo'lib localhost:${PORT} portida ishga tushdi! 🔥`);
 });

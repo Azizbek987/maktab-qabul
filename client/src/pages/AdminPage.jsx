@@ -1,211 +1,107 @@
-import { useEffect, useState } from 'react'
-import axios from 'react- Counselling'
-import axios from 'axios'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
-import { io } from 'socket.io-client'
-import toast from 'react-hot-toast' 
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 function AdminPage() {
-  const [apps, setApps] = useState([])
-  const [stats, setStats] = useState({})
-  const [search, setSearch] = useState('')
+  const [allApps, setAllApps] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getData()
-    getStats()
+    fetchAllApplications();
+  }, []);
 
-    if (Notification.permission === 'default') {
-      Notification.requestPermission()
-    }
-
-    const socket = io('https://maktab-qabul.onrender.com')
-
-    socket.on('new_application', (data) => {
-      getData()  
-      getStats() 
-
-      toast.success('🔥 Yangi ariza keldi!')
-
-      if (Notification.permission === 'granted') {
-        new Notification('Yangi ariza tushdi! 📝', {
-          body: data.message,
-          icon: '/favicon.ico'
-        })
-      }
-    })
-
-    return () => {
-      socket.disconnect()
-    }
-  }, [])
-
-  // 1. ARIZALARNI OLISH (Token Qo'shildi)
-  const getData = async () => {
+  const fetchAllApplications = async () => {
     try {
-      const token = localStorage.getItem('token')
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/application/all`, {
-        headers: {
-          Authorization: `Bearer ${token}` // 👈 Bearer ulandi!
-        }
-      })
-      setApps(res.data)
+      const res = await axios.get(`https://maktab-qabul-1.onrender.com/api/application/all`);
+      setAllApps(res.data || []);
     } catch (err) {
-      console.error("Ma'lumot olishda xatolik:", err)
+      console.error("Arizalarni yuklashda xatolik:", err);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  // 2. STATISTIKA OLISH (Token Qo'shildi)
-  const getStats = async () => {
+  const handleStatusChange = async (id, newStatus) => {
     try {
-      const token = localStorage.getItem('token')
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/application/stats`, {
-        headers: {
-          Authorization: `Bearer ${token}` // 👈 Bearer ulandi!
-        }
-      })
-      setStats(res.data)
+      await axios.put(`https://maktab-qabul-1.onrender.com/api/application/status/${id}`, { status: newStatus });
+      alert(`Ariza holati muvaffaqiyatli o'zgardi!`);
+      fetchAllApplications(); // Ro'yxatni yangilash
     } catch (err) {
-      console.error("Statistika olishda xatolik:", err)
+      alert("Xatolik yuz berdi!");
     }
-  }
+  };
 
-  // 3. STATUSNI YANGILASH (Token Qo'shildi)
-  const updateStatus = async (id, status) => {
-    try {
-      const token = localStorage.getItem('token')
-      await axios.put(`${import.meta.env.VITE_API_URL}/api/application/status/${id}`, 
-        { status },
-        {
-          headers: {
-            Authorization: `Bearer ${token}` // 👈 Bearer ulandi!
-          }
-        }
-      )
-      getData()
-      getStats()
-      toast.success(`Status muvaffaqiyatli o'zgartirildi: ${status}`)
-    } catch (err) {
-      toast.error('Statusni o\'zgartirishda xatolik yuz berdi')
-    }
-  }
-
-  const downloadPDF = () => {
-    const doc = new jsPDF()
-    doc.text('Maktab Qabul Arizalari', 14, 15)
-
-    const tableData = apps.map((item, index) => [
-      index + 1,
-      item.parent_name,
-      item.child_name,
-      item.age,
-      item.school_name || `ID: ${item.school_id}`, 
-      item.phone,
-      item.status
-    ])
-
-    autoTable(doc, {
-      startY: 25,
-      head: [['#', 'Ota-ona', 'Bola', 'Yosh', 'Maktab', 'Telefon', 'Status']],
-      body: tableData
-    })
-
-    doc.save('applications.pdf')
+  if (loading) {
+    return <div className="text-center p-10 font-bold text-blue-600 animate-pulse">Admin Panel Yuklanmoqda...</div>;
   }
 
   return (
-    <div className="p-5 md:p-10 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl md:text-4xl font-bold mb-10 text-gray-800 text-center md:text-left">
-        Admin Panel
-      </h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-10">
-        <div className="bg-white p-5 rounded shadow border-l-4 border-blue-500">
-          📊 Total: <span className="font-bold">{stats.total || 0}</span>
-        </div>
-        <div className="bg-yellow-100 p-5 rounded shadow border-l-4 border-yellow-500 text-yellow-700">
-          🟡 Pending: <span className="font-bold">{stats.pending || 0}</span>
-        </div>
-        <div className="bg-green-100 p-5 rounded shadow border-l-4 border-green-500 text-green-700">
-          🟢 Approved: <span className="font-bold">{stats.approved || 0}</span>
-        </div>
-        <div className="bg-red-100 p-5 rounded shadow border-l-4 border-red-500 text-red-700">
-          🔴 Rejected: <span className="font-bold">{stats.rejected || 0}</span>
-        </div>
+    <div className="p-4 md:p-8 max-w-6xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-3xl font-black text-gray-800 dark:text-white">🛠️ Admin Boshqaruv Paneli</h1>
+        <p className="text-gray-500 mt-1">Kelib tushgan barcha onlayn arizalarni real vaqt rejimida boshqaring.</p>
       </div>
 
-      <button
-        onClick={downloadPDF}
-        className="w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-white px-5 py-3 rounded mb-5 shadow-lg transition-all flex items-center justify-center gap-2"
-      >
-        📄 PDF Yuklash
-      </button>
+      {/* 🔥 MOBILE GRID FIX: Telefonda 1ta, planshetda 2ta, kompyuterda 3ta kolonka */}
+      {allApps.length === 0 ? (
+        <div className="text-center bg-gray-50 p-10 rounded-2xl border border-dashed text-gray-500">
+          Hozircha hech qanday ariza kelib tushmagan.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {allApps.map((item) => (
+            /* 🔥 PREMIUM CARD ANIMATION */
+            <div 
+              key={item.id} 
+              className="bg-white dark:bg-gray-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col justify-between hover:scale-105 hover:shadow-xl transition-all duration-300 transform"
+            >
+              <div>
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-lg font-bold text-blue-600 dark:text-blue-400">{item.child_name}</h3>
+                  <span className={`text-xs font-bold uppercase px-3 py-1 rounded-full ${
+                    item.status === 'approved' ? 'bg-green-100 text-green-700' :
+                    item.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'
+                  }`}>
+                    {item.status === 'pending' ? 'Kutilmoqda' : item.status === 'approved' ? 'Tasdiqlandi' : 'Rad etildi'}
+                  </span>
+                </div>
 
-      <input
-        type="text"
-        placeholder="Ism yoki telefon orqali qidirish..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="border-2 p-3 rounded-lg w-full mb-8 shadow-sm focus:ring-2 focus:ring-blue-400 outline-none transition-all"
-      />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {apps
-          .filter((item) => {
-            const text = `${item.child_name} ${item.parent_name} ${item.phone}`.toLowerCase()
-            return text.includes(search.toLowerCase())
-          })
-          .map((item) => (
-            <div key={item.id} className="bg-white p-6 rounded-xl shadow-md border border-gray-200 hover:shadow-lg transition-shadow">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-bold text-blue-700 leading-tight">
-                  {item.child_name}
-                </h3>
-                <span className={`font-bold uppercase text-[10px] p-1 px-2 rounded ${
-                  item.status === 'approved' ? 'bg-green-100 text-green-600' : 
-                  item.status === 'rejected' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'
-                }`}>
-                  {item.status}
-                </span>
-              </div>
-              
-              <div className="text-gray-600 mb-6 space-y-1 text-sm">
-                <p><strong>👤 Ota-ona:</strong> {item.parent_name}</p>
-                <p><strong>📞 Telefon:</strong> {item.phone}</p>
-                <p><strong>🏫 Maktab:</strong> {item.school_name || "Yuklanmoqda..."}</p>
-                <p><strong>📄 Hujjat:</strong> 
-                   <a 
-                     href={`${import.meta.env.VITE_API_URL}/uploads/${item.document}`} 
-                     target="_blank" 
-                     rel="noreferrer" 
-                     className="text-blue-500 ml-2 hover:underline font-medium"
-                   >
-                     Ko‘rish
-                   </a>
-                </p>
+                <div className="text-sm text-gray-600 dark:text-gray-300 space-y-2 mb-6">
+                  <p><strong>🏫 Maktab ID:</strong> {item.school_id}</p>
+                  <p><strong>👤 Ota-ona:</strong> {item.parent_name} ({item.age} yosh)</p>
+                  <p><strong>📞 Telefon:</strong> {item.phone}</p>
+                  {item.document && (
+                    <p>
+                      <strong>📄 Hujjat:</strong>{' '}
+                      <a href={item.document} target="_blank" rel="noreferrer" className="text-blue-500 underline font-semibold">
+                        Faylni ochish
+                      </a>
+                    </p>
+                  )}
+                </div>
               </div>
 
-              <div className="flex gap-3 mt-auto">
-                <button
-                  onClick={() => updateStatus(item.id, 'approved')}
-                  disabled={item.status === 'approved'}
-                  className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg transition-colors disabled:bg-gray-200 disabled:text-gray-400 font-semibold"
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3 mt-auto">
+                <button 
+                  onClick={() => handleStatusChange(item.id, 'approved')}
+                  className="px-4 py-2 bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold text-xs rounded-xl transition"
                 >
-                  Approve
+                  ✅ Tasdiqlash
                 </button>
-                <button
-                  onClick={() => updateStatus(item.id, 'rejected')}
-                  disabled={item.status === 'rejected'}
-                  className="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg transition-colors disabled:bg-gray-200 disabled:text-gray-400 font-semibold"
+                <button 
+                  onClick={() => handleStatusChange(item.id, 'rejected')}
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 active:scale-95 text-white font-bold text-xs rounded-xl transition"
                 >
-                  Reject
+                  ❌ Rad etish
                 </button>
               </div>
+
             </div>
           ))}
-      </div>
+        </div>
+      )}
     </div>
-  )
+  );
 }
 
-export default AdminPage
+export default AdminPage;

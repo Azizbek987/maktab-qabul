@@ -1,74 +1,50 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, memo } from 'react'; // memo qo'shildi
+import { Link } from 'react-router-dom';
+import { FaBars, FaTimes } from 'react-icons/fa';
 
 function Navbar() {
-  const navigate = useNavigate()
-  const token = localStorage.getItem('token')
-  
-  let role = ''
-  
-  // Token ichidan rolni aniqlab olish (Decode qilish)
-  if (token) {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]))
-      role = payload.role
-    } catch (e) {
-      console.error("Tokenni o'qishda xatolik:", e)
-    }
-  }
-
-  const handleLogout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    navigate('/login')
-  }
+  const [menuOpen, setMenuOpen] = useState(false);
+  const user = JSON.parse(localStorage.getItem('user')) || {};
+  const role = user.role || 'user';
 
   return (
-    <nav className="bg-white shadow-md p-4 flex justify-between items-center px-10">
-      <Link to="/" className="text-xl font-bold text-blue-600">🏫 Maktab Qabul</Link>
-      
-      <div className="flex gap-5 items-center">
-        <Link to="/" className="text-gray-600 hover:text-blue-600 font-medium">
-          Bosh sahifa
+    <nav className="bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-gray-800 sticky top-0 z-50">
+      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        <Link to="/" className="text-xl font-black text-blue-600 tracking-tight">
+          Maktab<span className="text-gray-800 dark:text-white">Qabul</span>
         </Link>
-        
-        {token && (
-          <Link to="/cabinet" className="text-gray-600 hover:text-blue-600 font-medium">
-            Shaxsiy Kabinet
-          </Link>
-        )}
-        
-        {token && (
-          <Link to="/chat" className="text-gray-600 hover:text-blue-600 font-medium">
-            Chat
-          </Link>
-        )}
 
-        {/* 🔐 FAQAT ADMIN GA ANALYTICS TUGMASI KO'RINADI (Siz so'ragan joy) */}
-        {(role === 'super_admin' || role === 'school_admin') && (
-          <Link to="/analytics" className="text-gray-600 hover:text-blue-600 font-medium">
-            Grafik Tahlillar
-          </Link>
-        )}
+        <div className="hidden md:flex gap-6 items-center font-semibold text-gray-600">
+          <Link to="/" className="hover:text-blue-600 transition">Bosh sahifa</Link>
+          <Link to="/cabinet" className="hover:text-blue-600 transition">Kabinet</Link>
+          {role === 'super_admin' && (
+            <>
+              <Link to="/admin" className="hover:text-blue-600 transition">Admin</Link>
+              <Link to="/analytics" className="hover:text-blue-600 transition">Analitika</Link>
+            </>
+          )}
+        </div>
 
-        {/* 🔐 FAQAT ADMIN GA ADMIN PANEL TUGMASI KO'RINADI */}
-        {(role === 'super_admin' || role === 'school_admin') && (
-          <Link to="/admin" className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 font-semibold transition-colors">
-            Admin Panel
-          </Link>
-        )}
-
-        {token ? (
-          <button onClick={handleLogout} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 font-medium">
-            Chiqish
-          </button>
-        ) : (
-          <Link to="/login" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium">
-            Kirish
-          </Link>
-        )}
+        <button className="md:hidden text-2xl p-2" onClick={() => setMenuOpen(!menuOpen)}>
+          {menuOpen ? <FaTimes className="text-red-500" /> : <FaBars className="text-blue-600" />}
+        </button>
       </div>
+
+      {menuOpen && (
+        <div className="md:hidden bg-white p-5 shadow-xl flex flex-col gap-4 font-bold animate-fadeIn">
+          <Link to="/" onClick={() => setMenuOpen(false)} className="p-2 hover:bg-blue-50 rounded-xl">🏠 Bosh sahifa</Link>
+          <Link to="/cabinet" onClick={() => setMenuOpen(false)} className="p-2 hover:bg-blue-50 rounded-xl">💼 Cabinet</Link>
+          {role === 'super_admin' && (
+            <>
+              <Link to="/admin" onClick={() => setMenuOpen(false)} className="p-2 hover:bg-blue-50 rounded-xl">⚙️ Admin Panel</Link>
+              <Link to="/analytics" onClick={() => setMenuOpen(false)} className="p-2 hover:bg-blue-50 rounded-xl">📊 Analytics</Link>
+            </>
+          )}
+        </div>
+      )}
     </nav>
-  )
+  );
 }
 
-export default Navbar
+// 🚀 5-QADAM: Navbar keraksiz joyda qayta render bo'lmasligi uchun memo ichiga o'raymirlar
+export default memo(Navbar);

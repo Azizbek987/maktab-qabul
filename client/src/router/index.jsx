@@ -1,91 +1,38 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { lazy, Suspense } from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar'; // O'z yo'lingizga qarab tekshiring
 
-import HomePage from '../pages/HomePage'
-import LoginPage from '../pages/LoginPage'
-import RegisterPage from '../pages/RegisterPage'
-import Dashboard from '../pages/Dashboard'
-import ProtectedRoute from '../utils/ProtectedRoute'
-import ApplicationPage from '../pages/ApplicationPage'
-import AdminPage from '../pages/AdminPage'
-import CabinetPage from '../pages/CabinetPage' 
-import ChatPage from '../pages/ChatPage' 
-import AnalyticsPage from '../pages/AnalyticsPage' // 📊 Analitika sahifasi import qilindi
-import { getUser } from '../utils/auth'
+// 🚀 1 va 2-QADAM: Barcha sahifalarni Lazy Loading qilish (Faqat ochilganda yuklanadi)
+const HomePage = lazy(() => import('./pages/HomePage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage'));
+const CabinetPage = lazy(() => import('./pages/CabinetPage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'));
 
-// 🔐 Admin rollarini tekshiruvchi funksiya (Yangilandi)
-const AdminRoute = ({ children }) => {
-  const user = getUser()
-
-  // Agar user tizimga kirmagan bo'lsa yoki roli admin bo'lmasa, bosh sahifaga otadi
-  if (!user || (user.role !== 'super_admin' && user.role !== 'school_admin')) {
-    return <Navigate to="/" />
-  }
-
-  return children
-}
-
-function Router() {
+function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Ochiq sahifalar */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/apply" element={<ApplicationPage />} />
+    <Router>
+      {/* Navbar har doim tepada turadi */}
+      <Navbar /> 
 
-        {/* Shaxsiy kabinet sahifasi */}
-        <Route
-          path="/cabinet"
-          element={
-            <ProtectedRoute>
-              <CabinetPage />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Chat sahifasi */}
-        <Route
-          path="/chat"
-          element={
-            <ProtectedRoute>
-              <ChatPage />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Admin panel sahifasi */}
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <AdminPage />
-            </AdminRoute>
-          }
-        />
-
-        {/* 📊 ANALYTICS DASHBOARD SAHIFASI (Faqat adminlar kira oladi) */}
-        <Route
-          path="/analytics"
-          element={
-            <AdminRoute>
-              <AnalyticsPage />
-            </AdminRoute>
-          }
-        />
-
-        {/* Dashboard sahifasi */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </BrowserRouter>
-  )
+      {/* 🚀 3-QADAM: Sahifalar yuklanayotgan paytda chiroyli "Yuklanmoqda..." chiqib turishi uchun Suspense */}
+      <Suspense fallback={
+        <div className="text-center p-20 text-2xl font-bold text-blue-600 animate-pulse">
+          ⚡ Sahifa yuklanmoqda...
+        </div>
+      }>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/cabinet" element={<CabinetPage />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
+        </Routes>
+      </Suspense>
+    </Router>
+  );
 }
 
-export default Router
+export default App;
