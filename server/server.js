@@ -3,6 +3,7 @@ const cors = require('cors');
 const morgan = require('morgan'); // Morgan yuklandi
 const logger = require('./utils/logger'); // Logger yuklandi
 const applicationRoutes = require('./routes/applicationRoutes');
+const authRoutes = require('./routes/authRoutes'); // 🚨 MANA SHU: Auth routeri yuklandi!
 
 const app = express();
 
@@ -15,6 +16,7 @@ app.use(morgan('dev'));
 
 // Routerlarni ulash
 app.use('/api/application', applicationRoutes);
+app.use('/api/auth', authRoutes); // 🚨 MANA SHU: Frontenddan keladigan /api/auth/register so'rovlarini ushlash uchun!
 
 // Bosh sahifa testi
 app.get('/', (req, res) => {
