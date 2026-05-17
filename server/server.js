@@ -3,7 +3,8 @@ const cors = require('cors');
 const morgan = require('morgan'); // Morgan yuklandi
 const logger = require('./utils/logger'); // Logger yuklandi
 const applicationRoutes = require('./routes/applicationRoutes');
-const authRoutes = require('./routes/authRoutes'); // 🚨 MANA SHU: Auth routeri yuklandi!
+const authRoutes = require('./routes/authRoutes'); // Auth routeri
+const schoolRoutes = require('./routes/schoolRoutes'); // 🚨 YANGI: Maktab routerini yuklaymiz!
 
 const app = express();
 
@@ -11,19 +12,23 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🚀 REQUEST LOGGER: Har bir kelayotgan so'rovni terminalda ko'rsatadi (GET /api/... 200 OK)
+// Request Logger
 app.use(morgan('dev')); 
 
 // Routerlarni ulash
 app.use('/api/application', applicationRoutes);
-app.use('/api/auth', authRoutes); // 🚨 MANA SHU: Frontenddan keladigan /api/auth/register so'rovlarini ushlash uchun!
+app.use('/api/auth', authRoutes); 
+
+// 🚨 YANGI: Frontend /api/schools/all va /api/school/all deb so'raganda ushlab qolish uchun eshiklar:
+app.use('/api/schools', schoolRoutes);
+app.use('/api/school', schoolRoutes); 
 
 // Bosh sahifa testi
 app.get('/', (req, res) => {
   res.send('Maktab Qabul API Tizimi Ishlamoqda... 🚀');
 });
 
-// 🛠️ GLOBAL ERROR HANDLER: Server kutilmaganda crash bo'lishidan asraydi
+// 🛠️ GLOBAL ERROR HANDLER
 app.use((err, req, res, next) => {
   console.error("Global xatolik aniqlandi:", err.stack);
   
