@@ -3,25 +3,37 @@ const cors = require('cors');
 const morgan = require('morgan'); 
 const logger = require('./utils/logger'); 
 
-// 🚨 Fayl nomlarini siz aytgandek aniq yozib yuklaymiz:
-const applicationRoutes = require('./routes/applicationRoutes');
+// 🚨 1. Fayl nomlarini har qanday variantga moslab tekshirib yuklaymiz:
+let applicationRoutes;
+try {
+  applicationRoutes = require('./routes/applicationRoutes');
+} catch (e) {
+  // Agar fayl nomi oxirida 's' siz bo'lsa (applicationRouter) shuni o'qiydi:
+  applicationRoutes = require('./routes/applicationRouter'); 
+}
+
 const authRoutes = require('./routes/authRoutes'); 
-const schoolRoutes = require('./routes/schoolRouter'); // Oxirida 'Router' turibdi, 'Routes' emas!
+
+let schoolRoutes;
+try {
+  schoolRoutes = require('./routes/schoolRouter');
+} catch (e) {
+  schoolRoutes = require('./routes/schoolRoutes');
+}
 
 const app = express();
 
 // Middleware sozlamalari
 app.use(cors());
 app.use(express.json());
-
-// Request Logger (Terminalda so'rovlarni ko'rish uchun)
 app.use(morgan('dev')); 
 
-// 🚨 ESHIKLARNI OCHAMIZ:
+// 🚨 2. MANA BU JOYI JUDA MUHIM! FRONTEND /api/application/... DEB SO'RAYAPTI
+// Har qanday holatda ham 404 bermasligi uchun barcha yo'llarni yozamiz:
 app.use('/api/application', applicationRoutes);
-app.use('/api/auth', authRoutes); 
+app.use('/api/applications', applicationRoutes); // Zaxira variant
 
-// Frontend /api/schools/all va /api/school/all deb so'rayapti, ikkalasini ham schoolRoutes'ga yo'naltiramiz:
+app.use('/api/auth', authRoutes); 
 app.use('/api/schools', schoolRoutes);
 app.use('/api/school', schoolRoutes); 
 
@@ -30,15 +42,10 @@ app.get('/', (req, res) => {
   res.send('Maktab Qabul API Tizimi Ishlamoqda... 🚀');
 });
 
-// 🛠️ GLOBAL ERROR HANDLER
+// Global error handler
 app.use((err, req, res, next) => {
   console.error("Global xatolik aniqlandi:", err.stack);
-  if (logger && logger.error) {
-    logger.error(`Global Server Xatosi: ${err.message} - Stack: ${err.stack}`);
-  }
-  res.status(500).json({
-    message: 'Tizimda ichki server xatosi yuz berdi!'
-  });
+  res.status(500).json({ message: 'Tizimda ichki server xatosi yuz berdi!' });
 });
 
 // Serverni ishga tushirish
