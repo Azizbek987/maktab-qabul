@@ -1,33 +1,55 @@
 const express = require('express');
 const router = express.Router();
-const sendTelegramMessage = require('../utils/telegram');
+const pool = require('../config/db'); // Bazaga ulanish
+const sendTelegramMessage = require('../utils/telegram'); // Telegram bot ulanishi
 
-// 📥 Yangi ariza topshirish (POST)
+// 📥 1. Yangi ariza topshirish (POST /api/application/create)
 router.post('/create', async (req, res) => {
   try {
     const { parent_name, child_name, phone } = req.body;
 
-    // 1. Bu yerda arizani bazaga (Supabase/Postgres) saqlash kodi bo'ladi
-    // Masalan: const newApplication = await db.query(...) 
+    // 📝 Neon PostgreSQL bazasiga arizani saqlash (Jadvalingiz nomiga qarab o'zgartiring agar kerak bo'lsa)
+    const result = await pool.query(
+      'INSERT INTO applications (parent_name, child_name, phone) VALUES ($1, $2, $3) RETURNING *',
+      [parent_name, child_name, phone]
+    );
 
-    // 2. 🚀 Ariza muvaffaqiyatli bo'lsa, srazi Telegram Botga xabar boradi:
-    const telegramText = `
-📥 *YANGI ARIZA TUSHDI!*
+    // 🚀 Ariza muvaffaqiyatli bo'lsa, Telegram Botga xabar boradi:
+    const telegramText = `📥 *YANGI ARIZA TUSHDI!*\n\n👨 *Ota-ona:* ${parent_name}\n👶 *Bola:* ${child_name}\n📱 *Telefon:* ${phone}\n\n_Tizim: Maktab Qabul Online_`;
 
-👨 *Ota-ona:* ${parent_name}
-👶 *Bola:* ${child_name}
-📱 *Telefon:* ${phone}
+    try {
+      await sendTelegramMessage(telegramText);
+      console.log("🤖 Arizadan Telegram xabari muvaffaqiyatli ketdi!");
+    } catch (botErr) {
+      console.error("❌ Telegram bot xabar yuborishda xato:", botErr.message);
+    }
 
-_Tizim: Maktab Qabul Online_
-    `;
-
-    await sendTelegramMessage(telegramText);
-
-    // Frontendga javob qaytarish
-    res.status(201).json({ success: true, message: "Ariza qabul qilindi va Telegramga yuborildi!" });
+    return res.status(201).json({ 
+      success: true, 
+      message: "Ariza qabul qilindi va Telegramga yuborildi!",
+      application: result.rows[0]
+    });
 
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    console.error("💥 Arizada xato:", err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 🔍 2. Frontend so'rayotgan shaxsiy arizalarni olish (GET /api/application/my/:id)
+// 🚨 Aynan mana shu yo'l yo'qligi uchun frontend 404 xatosi berayotgan edi!
+router.get('/my/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Foydalanuvchining arizasini bazadan qidirish
+    const result = await pool.query('SELECT * FROM applications WHERE id = $1', [id]);
+    
+    // Agar ariza bo'lmasa ham bo'sh massiv qaytaramiz (frontend sinib qolmasligi uchun)
+    return res.json(result.rows || []);
+  } catch (err) {
+    console.error("💥 Arizalarni olishda xato:", err.message);
+    return res.status(500).json({ success: false, error: err.message });
   }
 });
 

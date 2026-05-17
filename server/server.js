@@ -1,10 +1,12 @@
 const express = require('express');
 const cors = require('cors');
-const morgan = require('morgan'); // Morgan yuklandi
-const logger = require('./utils/logger'); // Logger yuklandi
+const morgan = require('morgan'); 
+const logger = require('./utils/logger'); 
+
+// 🚨 Fayl nomlarini siz aytgandek aniq yozib yuklaymiz:
 const applicationRoutes = require('./routes/applicationRoutes');
-const authRoutes = require('./routes/authRoutes'); // Auth routeri
-const schoolRoutes = require('./routes/schoolRoutes'); // 🚨 YANGI: Maktab routerini yuklaymiz!
+const authRoutes = require('./routes/authRoutes'); 
+const schoolRoutes = require('./routes/schoolRouter'); // Oxirida 'Router' turibdi, 'Routes' emas!
 
 const app = express();
 
@@ -12,14 +14,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Request Logger
+// Request Logger (Terminalda so'rovlarni ko'rish uchun)
 app.use(morgan('dev')); 
 
-// Routerlarni ulash
+// 🚨 ESHIKLARNI OCHAMIZ:
 app.use('/api/application', applicationRoutes);
 app.use('/api/auth', authRoutes); 
 
-// 🚨 YANGI: Frontend /api/schools/all va /api/school/all deb so'raganda ushlab qolish uchun eshiklar:
+// Frontend /api/schools/all va /api/school/all deb so'rayapti, ikkalasini ham schoolRoutes'ga yo'naltiramiz:
 app.use('/api/schools', schoolRoutes);
 app.use('/api/school', schoolRoutes); 
 
@@ -31,10 +33,9 @@ app.get('/', (req, res) => {
 // 🛠️ GLOBAL ERROR HANDLER
 app.use((err, req, res, next) => {
   console.error("Global xatolik aniqlandi:", err.stack);
-  
-  // Xatoni error.log fayliga yozamiz
-  logger.error(`Global Server Xatosi: ${err.message} - Stack: ${err.stack}`);
-  
+  if (logger && logger.error) {
+    logger.error(`Global Server Xatosi: ${err.message} - Stack: ${err.stack}`);
+  }
   res.status(500).json({
     message: 'Tizimda ichki server xatosi yuz berdi!'
   });
