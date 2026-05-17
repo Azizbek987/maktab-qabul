@@ -1,9 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan'); 
-const logger = require('./utils/logger'); 
 
-// 🚨 Router fayllarini har qanday variantga moslab yuklaymiz:
+// Routerlarni yuklash
 let applicationRoutes;
 try {
   applicationRoutes = require('./routes/applicationRoutes');
@@ -22,12 +21,18 @@ try {
 
 const app = express();
 
-// Middleware sozlamalari
+// 🚨 MIDDLEWARE SOZLAMALARI (O'ZGARTIRILDI)
 app.use(cors());
-app.use(express.json());
+
+// Frontenddan JSON ma'lumot kelsa o'qish uchun:
+app.use(express.json()); 
+
+// 🚨 ENG MUHIMI: Frontend Form-Data yoki URL-encoded yuborgan bo'lsa ham o'qiy oladigan parser:
+app.use(express.urlencoded({ extended: true })); 
+
 app.use(morgan('dev')); 
 
-// 🚨 ESHIKLARNI KENG OCHAMIZ (Frontend adashsa ham tutib oladigan qilib):
+// ESHIKLAR:
 app.use('/api/application', applicationRoutes);
 app.use('/api/applications', applicationRoutes); 
 app.use('/api/auth', authRoutes); 
