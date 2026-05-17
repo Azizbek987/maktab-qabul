@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css' // Agar sizda CSS fayl bo'lsa
 import { Toaster } from 'react-hot-toast' // 👈 1. TEPADAN IMPORT QILINDI
+import './i18n';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
