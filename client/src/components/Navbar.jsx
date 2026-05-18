@@ -39,7 +39,7 @@ const Navbar = () => {
           {t('payment') || '📭 To\'lov'}
         </Link>
 
-        {/* 🚀 YANGI QO'SHILGAN: QR KODLAR SAHIFASI TUGMASI */}
+        {/* 📱 QR Code sahifasi */}
         <Link 
           to="/qr" 
           className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition shadow-md"
@@ -47,7 +47,15 @@ const Navbar = () => {
           {t('qr_code') || '📱 QR Code'}
         </Link>
 
-        {/* 🌐 Tillar almashadigan chiroyli Select tugmasi */}
+        {/* 🤖 YANGI QO'SHILGAN: AI ASSISTANT TUGMASI */}
+        <Link 
+          to="/ai" 
+          className="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition shadow-md animate-bounce-short"
+        >
+          {t('ai_assistant') || '🤖 AI Assistant'}
+        </Link>
+
+        {/* 🌐 Tillar selecti */}
         <select
           onChange={changeLanguage}
           value={i18n.language}
