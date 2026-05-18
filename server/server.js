@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan'); 
 
-// Routerlarni yuklash
+// 🚨 1. ROUTERLARNI YUKLASH (To'lov tizimi qo'shildi)
 let applicationRoutes;
 try {
   applicationRoutes = require('./routes/applicationRoutes');
@@ -19,25 +19,31 @@ try {
   schoolRoutes = require('./routes/schoolRoutes');
 }
 
+// 💵 Yangi qo'shilgan To'lov tizimi routeri:
+const paymentRoutes = require('./routes/paymentRoutes');
+
 const app = express();
 
-// 🚨 MIDDLEWARE SOZLAMALARI (O'ZGARTIRILDI)
+// 🚨 MIDDLEWARE SOZLAMALARI
 app.use(cors());
 
 // Frontenddan JSON ma'lumot kelsa o'qish uchun:
 app.use(express.json()); 
 
-// 🚨 ENG MUHIMI: Frontend Form-Data yoki URL-encoded yuborgan bo'lsa ham o'qiy oladigan parser:
+// Frontend Form-Data yoki URL-encoded yuborgan bo'lsa ham o'qiy oladigan parser:
 app.use(express.urlencoded({ extended: true })); 
 
 app.use(morgan('dev')); 
 
-// ESHIKLAR:
+// 🚨 2. API ESHIKLARI (To'lov tizimi eshigi joylandi)
 app.use('/api/application', applicationRoutes);
 app.use('/api/applications', applicationRoutes); 
 app.use('/api/auth', authRoutes); 
 app.use('/api/schools', schoolRoutes);
 app.use('/api/school', schoolRoutes); 
+
+// 💵 Yangi to'lov tizimi eshigi (/api/payment/create uchun):
+app.use('/api/payment', paymentRoutes);
 
 // Bosh sahifa testi
 app.get('/', (req, res) => {

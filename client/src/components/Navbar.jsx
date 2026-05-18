@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom'; // Sahifalar silliq o'tishi uchun Link qo'shdik
 
 const Navbar = () => {
   const { t, i18n } = useTranslation();
@@ -11,24 +12,32 @@ const Navbar = () => {
   return (
     <nav className="bg-slate-900 text-white p-4 flex justify-between items-center shadow-lg">
       {/* Sayt Logosi */}
-      <div className="text-xl font-bold tracking-wide text-blue-400">
+      <Link to="/" className="text-xl font-bold tracking-wide text-blue-400 cursor-pointer">
         Maktab Qabul
-      </div>
+      </Link>
 
       {/* Menyular ro'yxati va Til tanlagich */}
       <div className="flex items-center gap-6">
-        <a href="#" className="hover:text-blue-400 transition">
+        <Link to="/" className="hover:text-blue-400 transition">
           {t('home')}
-        </a>
-        <a href="#" className="hover:text-blue-400 transition">
+        </Link>
+        <Link to="/apply" className="hover:text-blue-400 transition">
           {t('apply')}
-        </a>
-        <a href="#" className="hover:text-blue-400 transition">
+        </Link>
+        <Link to="/login" className="hover:text-blue-400 transition">
           {t('login')}
-        </a>
-        <a href="#" className="hover:text-blue-400 transition">
+        </Link>
+        <Link to="/register" className="hover:text-blue-400 transition">
           {t('register')}
-        </a>
+        </Link>
+
+        {/* 💵 YANGI QO'SHILGAN TO'LOV TUGMASI (Tilga moslashadi) */}
+        <Link 
+          to="/payment" 
+          className="bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition shadow-md"
+        >
+          {t('payment') || '📭 To\'lov'}
+        </Link>
 
         {/* 🌐 Tillar almashadigan chiroyli Select tugmasi */}
         <select
