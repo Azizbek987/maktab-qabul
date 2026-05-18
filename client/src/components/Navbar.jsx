@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom'; // Sahifalar silliq o'tishi uchun Link qo'shdik
+import { Link } from 'react-router-dom'; 
 
 const Navbar = () => {
   const { t, i18n } = useTranslation();
@@ -31,12 +31,20 @@ const Navbar = () => {
           {t('register')}
         </Link>
 
-        {/* 💵 YANGI QO'SHILGAN TO'LOV TUGMASI (Tilga moslashadi) */}
+        {/* 💵 To'lov tugmasi */}
         <Link 
           to="/payment" 
           className="bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition shadow-md"
         >
           {t('payment') || '📭 To\'lov'}
+        </Link>
+
+        {/* 🚀 YANGI QO'SHILGAN: QR KODLAR SAHIFASI TUGMASI */}
+        <Link 
+          to="/qr" 
+          className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-medium transition shadow-md"
+        >
+          {t('qr_code') || '📱 QR Code'}
         </Link>
 
         {/* 🌐 Tillar almashadigan chiroyli Select tugmasi */}
